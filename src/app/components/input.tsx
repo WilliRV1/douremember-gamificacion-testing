@@ -38,17 +38,17 @@ function Input({ label, type = "text", icon: Icon, error, ...props }: InputProps
         <input
           type={inputType}
           className={`
-            w-full pr-12 py-3.5 
+            w-full pr-12 py-3.5
             ${Icon ? 'pl-12' : 'pl-4'}
-            text-base font-medium text-gray-900
-            placeholder:text-gray-400 placeholder:font-normal
+            text-base font-semibold text-slate-900
+            placeholder:text-slate-500 placeholder:font-normal
             bg-white
             border-2 rounded-xl
             outline-none
             transition-all duration-200
             shadow-sm
-            ${error 
-              ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-100' 
+            ${error
+              ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-100'
               : 'border-gray-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 hover:border-purple-400'
             }
           `}
