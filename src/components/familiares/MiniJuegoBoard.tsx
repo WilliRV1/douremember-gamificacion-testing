@@ -223,7 +223,7 @@ export function MiniJuegoBoard({ pacienteId }: MiniJuegoBoardProps) {
           value={inputNombre}
           onChange={(e) => setInputNombre(e.target.value)}
           placeholder="Escribe el nombre..."
-          className="flex-1 px-5 py-4 text-lg border-2 border-slate-200 rounded-2xl focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
+          className="flex-1 px-5 py-4 text-lg font-semibold text-black placeholder:text-slate-500 border-2 border-slate-200 rounded-2xl focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
           autoFocus
           autoComplete="off"
         />

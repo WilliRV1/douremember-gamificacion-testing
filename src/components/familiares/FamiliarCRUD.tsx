@@ -262,7 +262,7 @@ export function FamiliarCRUD({ pacienteId, pacienteNombre }: FamiliarCRUDProps) 
             <select
               value={formData.parentesco}
               onChange={(e) => setFormData(prev => ({ ...prev, parentesco: e.target.value }))}
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:border-purple-400 outline-none"
+              className="w-full px-4 py-2.5 text-black border border-slate-300 rounded-xl focus:border-purple-400 outline-none"
               required
             >
               <option value="">Seleccionar parentesco...</option>
@@ -282,7 +282,7 @@ export function FamiliarCRUD({ pacienteId, pacienteNombre }: FamiliarCRUDProps) 
               value={formData.nombre}
               onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
               placeholder="Nombre del familiar"
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:border-purple-400 outline-none"
+              className="w-full px-4 py-2.5 text-black placeholder:text-slate-500 border border-slate-300 rounded-xl focus:border-purple-400 outline-none"
             />
           </div>
 
@@ -309,7 +309,7 @@ export function FamiliarCRUD({ pacienteId, pacienteNombre }: FamiliarCRUDProps) 
               onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
               placeholder="Una frase que ayude al paciente a recordar..."
               rows={3}
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:border-purple-400 outline-none resize-none"
+              className="w-full px-4 py-2.5 text-black placeholder:text-slate-500 border border-slate-300 rounded-xl focus:border-purple-400 outline-none resize-none"
             />
           </div>
 
