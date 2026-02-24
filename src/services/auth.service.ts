@@ -144,6 +144,13 @@ class AuthService {
     try {
       await this.supabase.auth.signOut()
       this.currentSession = null
+      // Limpiar también localStorage (testing mode)
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('userId')
+        localStorage.removeItem('userRole')
+        localStorage.removeItem('userName')
+      }
       console.log('✅ Sesión cerrada')
     } catch (error) {
       console.error('❌ Error al cerrar sesión:', error)
@@ -159,6 +166,26 @@ class AuthService {
       // Si ya tenemos sesión en memoria, devolverla
       if (this.currentSession) {
         return this.currentSession
+      }
+
+      // 🔥 TESTING MODE: Verificar localStorage antes de Supabase
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('authToken')
+        const userId = localStorage.getItem('userId')
+        const userRole = localStorage.getItem('userRole')
+        const userName = localStorage.getItem('userName')
+
+        if (token && userId && userRole) {
+          const testSession: UserSession = {
+            userId,
+            email: '',
+            rol: userRole,
+            nombre: userName || 'Usuario',
+            accessToken: token,
+          }
+          this.currentSession = testSession
+          return testSession
+        }
       }
 
       const { data: { session } } = await this.supabase.auth.getSession()

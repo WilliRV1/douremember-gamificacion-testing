@@ -174,60 +174,44 @@ function LoginForm() {
     setIsLoading(true)
 
     try {
-      // 1. Petición de Login a la API
-      const response = await fetch(`${API_URL}/api/usuarios-autenticacion/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // 🔥 MODO TESTING: Login directo sin validar contra backend
+      const testUsers: any = {
+        'doctor@douremember.app': {
+          id: '649e531b-2d27-4fe6-a1ca-bd38ff712d04',
+          nombre: 'Carlos García',
+          rol: 'medico'
         },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Credenciales inválidas')
-      }
-
-      const data = await response.json()
-      const token = data.access_token
-      const idUsuario = data.user_id
-
-      if (!token || !idUsuario) {
-        throw new Error('La respuesta del servidor no contiene token o idUsuario')
-      }
-
-      // 2. Almacenar Token y ID (¡Paso crítico antes de la redirección!)
-      sessionStorage.setItem('authToken', token)
-      sessionStorage.setItem('userId', idUsuario)
-
-      console.log('✅ Login exitoso. Token almacenado en sessionStorage.')
-      
-      // 3. Obtener información del usuario (Rol)
-      const userResponse = await fetch(
-        `${API_URL}/api/usuarios-autenticacion/buscarUsuario/${idUsuario}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+        'paciente@douremember.app': {
+          id: '7165f511-c999-46a7-881c-755fc3e61510',
+          nombre: 'Juan Pérez',
+          rol: 'paciente'
+        },
+        'cuidador@douremember.app': {
+          id: '892c4a2f-b555-4bdd-9fac-db16a4f1d3cc',
+          nombre: 'María López',
+          rol: 'cuidador'
         }
-      )
-
-      if (!userResponse.ok) {
-        throw new Error('No se pudo obtener información del usuario')
       }
 
-      const userData = await userResponse.json()
-      const usuario = userData.usuarios?.[0]
-
-      if (!usuario) {
-        throw new Error('Usuario no encontrado en la respuesta')
+      const testUser = testUsers[formData.email]
+      if (!testUser) {
+        throw new Error('Usuario de prueba no encontrado. Usa: doctor@douremember.app, paciente@douremember.app o cuidador@douremember.app')
       }
 
-      const rol = usuario.rol
+      // Crear sesión simulada
+      const token = `test-token-${testUser.rol}`
+      const idUsuario = testUser.id
+
+      // 2. Almacenar Token y ID en localStorage (persiste entre pestañas)
+      localStorage.setItem('authToken', token)
+      localStorage.setItem('userId', idUsuario)
+      localStorage.setItem('userRole', testUser.rol)
+      localStorage.setItem('userName', testUser.nombre)
+
+      console.log('✅ Login exitoso. Token almacenado en localStorage.')
+
+      // 3. Ya tenemos el rol del testUser, no necesita fetch adicional
+      const rol = testUser.rol
       console.log(`🎯 Usuario con rol: ${rol}`)
 
       let redirectPath: string;
@@ -262,8 +246,10 @@ function LoginForm() {
         general: error.message || 'Error al iniciar sesión. Verifica tus credenciales.',
       })
       // Asegurarse de limpiar la sesión si falló a mitad del proceso
-      sessionStorage.removeItem('authToken');
-      sessionStorage.removeItem('userId');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userName');
     } finally {
       setIsLoading(false)
     }

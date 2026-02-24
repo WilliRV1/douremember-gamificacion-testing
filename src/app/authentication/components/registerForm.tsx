@@ -289,8 +289,10 @@ export default function Register() {
   // EFECTO: VERIFICAR TOKEN AL CARGAR
   // =============================================
   useEffect(() => {
+    // NOTA: Si hay token, verificar invitación. Si no, permitir registro directo
     if (!token) {
-      setEstado("invalido");
+      console.log('⚠️ Sin token de invitación - permitiendo registro directo');
+      setEstado("ok");
       return;
     }
 
@@ -320,7 +322,8 @@ export default function Register() {
 
       } catch (error: any) {
         console.error('❌ Error al verificar token:', error);
-        setEstado("invalido");
+        // No fallo - permitir registro directo de todas formas
+        setEstado("ok");
       }
     };
 
@@ -615,7 +618,7 @@ export default function Register() {
                   }}
                   error={errors.email}
                   placeholder="tu@correo.com"
-                  disabled={true}
+                  disabled={isLoading || success || !!invitacionData}
                 />
 
                 <Input
@@ -645,31 +648,44 @@ export default function Register() {
                     Tu rol en la plataforma
                   </label>
 
-                  {/* Mostrar el rol de forma informativa (no editable) */}
-                  <div className="p-4 border-2 border-purple-600 bg-purple-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-slate-800 capitalize">
-                          {formData.role === 'medico' ? 'Médico' :
-                            formData.role === 'cuidador' ? 'Cuidador' : 'Paciente'}
+                  {/* Permitir seleccionar rol */}
+                  <div className="space-y-2">
+                    {[
+                      { value: 'doctor', label: 'Médico', desc: 'Acompaña el proceso' },
+                      { value: 'cuidador', label: 'Cuidador', desc: 'Sube los recuerdos' },
+                      { value: 'paciente', label: 'Paciente', desc: 'Recibo la terapia' },
+                    ].map((role) => (
+                      <div
+                        key={role.value}
+                        onClick={() => setFormData({ ...formData, role: role.value })}
+                        className={cn(
+                          "p-4 border-2 rounded-lg cursor-pointer transition-all",
+                          formData.role === role.value
+                            ? 'border-purple-600 bg-purple-50'
+                            : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-10 h-10 rounded-full flex items-center justify-center",
+                            formData.role === role.value ? 'bg-purple-600' : 'bg-slate-300'
+                          )}>
+                            <User className={cn(
+                              "w-5 h-5",
+                              formData.role === role.value ? 'text-white' : 'text-slate-600'
+                            )} />
+                          </div>
+                          <div>
+                            <div className="font-semibold text-slate-800">
+                              {role.label}
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              {role.desc}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-slate-600">
-                          {formData.role === 'medico' ? 'Acompaña el proceso' :
-                            formData.role === 'cuidador' ? 'Sube los recuerdos' :
-                              'Recibo la terapia'}
-                        </div>
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-blue-800">
-                      El rol fue asignado por el sistema y no puede ser modificado.
-                    </p>
+                    ))}
                   </div>
                 </div>
               </div>

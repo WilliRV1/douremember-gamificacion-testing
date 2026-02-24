@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Target, Trophy, FileText, User, LogOut } from "lucide-react"
+import { Target, Trophy, FileText, User, LogOut, Users, Gamepad2 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DashboardHeader } from "@/components/dashboard-header"
@@ -24,58 +24,72 @@ export default function PatientDashboard() {
 
     const initializeData = async () => {
       try {
+        // 🔥 TESTING: Usar localStorage en lugar de hacer fetch
         const token = localStorage.getItem("authToken")
         const userId = localStorage.getItem("userId")
+        const userRole = localStorage.getItem("userRole")
+        const userName = localStorage.getItem("userName")
 
         if (!token || !userId) {
           router.push('/authentication/login')
           return
         }
 
-        // Perfil del paciente
-        const perfilResponse = await fetch(`${API_URL}/usuarios-autenticacion/buscarUsuario/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        if (!perfilResponse.ok) throw new Error("Error al obtener perfil")
-        const perfilData = await perfilResponse.json()
-        const usuario = perfilData?.usuarios?.[0] || perfilData?.usuario || perfilData
-        if (!usuario) throw new Error("Usuario no encontrado")
-        if (usuario.rol !== "paciente") {
-          // Redirección según rol
-          switch(usuario.rol) {
+        // Verificar rol sin fetch
+        if (userRole !== "paciente") {
+          switch(userRole) {
             case 'medico': router.push('/users/doctor'); break
             case 'cuidador': router.push('/users/cuidador'); break
-            case 'administrador': router.push('/users/admin'); break
             default: router.push('/'); break
           }
           return
         }
-        if (mounted) setProfile(usuario)
 
-        // Médico asignado
-        const medicoResponse = await fetch(`${API_URL}/usuarios-autenticacion/medicoPaciente/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        // Usar datos del localStorage
+        if (mounted) setProfile({
+          id: userId,
+          nombre: userName,
+          rol: userRole
         })
-        if (medicoResponse.ok) {
-          const medicoData = await medicoResponse.json()
-          if (mounted) setDoctor(medicoData)
+
+        // Médico asignado (optional - handle errors gracefully)
+        try {
+          const medicoResponse = await fetch(`${API_URL}/usuarios-autenticacion/medicoPaciente/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          if (medicoResponse.ok) {
+            const medicoData = await medicoResponse.json()
+            if (mounted) setDoctor(medicoData)
+          }
+        } catch (err) {
+          console.warn('No se pudo obtener información del médico:', err)
+          // Continue without doctor data
         }
 
-        // Sesiones del paciente
-        const sesionesResponse = await fetch(`${API_URL}/descripciones-imagenes/listarSesiones?idPaciente=${userId}&page=1&limit=100`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        if (sesionesResponse.ok) {
-          const allSessionsData = await sesionesResponse.json()
-          const todasSesiones = allSessionsData.data || []
+        // Sesiones del paciente (optional - handle errors gracefully)
+        try {
+          const sesionesResponse = await fetch(`${API_URL}/descripciones-imagenes/listarSesiones?idPaciente=${userId}&page=1&limit=100`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          if (sesionesResponse.ok) {
+            const allSessionsData = await sesionesResponse.json()
+            const todasSesiones = allSessionsData.data || []
 
+            if (mounted) {
+              setSesionesActivas(
+                todasSesiones.filter((s: any) => (s.estado === 'en_curso' || s.estado === 'pendiente') && s.activacion === true)
+              )
+              setSesionesCompletadas(
+                todasSesiones.filter((s: any) => s.estado === 'completado')
+              )
+            }
+          }
+        } catch (err) {
+          console.warn('No se pudieron obtener sesiones:', err)
+          // Continue with empty sessions
           if (mounted) {
-            setSesionesActivas(
-              todasSesiones.filter((s: any) => (s.estado === 'en_curso' || s.estado === 'pendiente') && s.activacion === true)
-            )
-            setSesionesCompletadas(
-              todasSesiones.filter((s: any) => s.estado === 'completado')
-            )
+            setSesionesActivas([])
+            setSesionesCompletadas([])
           }
         }
 
@@ -167,6 +181,44 @@ export default function PatientDashboard() {
               <span className="text-3xl font-bold">{totalSesiones}</span>
             </div>
             <p className="mt-2 text-sm">Total de Sesiones</p>
+          </Card>
+        </div>
+        {/* Sección Galería Familiar y Mini-juego */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+          <Card
+            className="bg-white p-6 rounded-2xl shadow-md border border-purple-100 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => router.push('/familiares/gallery')}
+          >
+            <div className="flex items-center gap-4 mb-3">
+              <div className="p-3 bg-purple-100 rounded-xl">
+                <Users className="w-7 h-7 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Galería Familiar</h3>
+                <p className="text-sm text-slate-500">Mira las fotos de tus familiares</p>
+              </div>
+            </div>
+            <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+              Ver Galería
+            </Button>
+          </Card>
+
+          <Card
+            className="bg-white p-6 rounded-2xl shadow-md border border-indigo-100 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => router.push('/familiares/minijuego')}
+          >
+            <div className="flex items-center gap-4 mb-3">
+              <div className="p-3 bg-indigo-100 rounded-xl">
+                <Gamepad2 className="w-7 h-7 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Mini-juego</h3>
+                <p className="text-sm text-slate-500">¿Recuerdas sus nombres?</p>
+              </div>
+            </div>
+            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+              Jugar Ahora
+            </Button>
           </Card>
         </div>
       </main>

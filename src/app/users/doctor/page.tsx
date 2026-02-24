@@ -10,7 +10,7 @@ import { AssignCaregiverModal } from "@/components/assign-caregiver-modal"
 import { QuickStats } from "@/components/quick-stats"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { UserPlus, FileText, LogOut, Users, Activity, User } from "lucide-react"
+import { UserPlus, FileText, LogOut, Users, Activity, User, BarChart3 } from "lucide-react"
 
 import BaselineReportsModule from "@/app/components/reports/BaseLineReportsModule"
 import BaselineReportsStats from "@/app/components/reports/BaseLineReportsStats"
@@ -44,7 +44,7 @@ export default function DoctorPage() {
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
-    const [activeView, setActiveView] = useState<"patients" | "reports">("patients")
+    const [activeView, setActiveView] = useState<"patients" | "reports" | "minijuego">("patients")
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [refreshKey, setRefreshKey] = useState(0)
     const router = useRouter()
@@ -53,57 +53,27 @@ export default function DoctorPage() {
     // --- FUNCIÓN loadData ---
     const loadData = async (idMedico: string) => {
         try {
-            const token = sessionStorage.getItem("authToken") 
-            if (!token) throw new Error("No se encontró token de autenticación")
-
-            // Petición de Pacientes
-            const patientsResponse = await fetch(
-                `${API_URL}/api/usuarios-autenticacion/pacientesDeMedico/${idMedico}`,
+            // 🔥 MODO TESTING: Usar datos dummy en lugar de obtenerlos del backend
+            const dummyPatients = [
                 {
-                    method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
+                    idUsuario: '7165f511-c999-46a7-881c-755fc3e61510',
+                    nombre: 'Juan Pérez',
+                    correo: 'paciente@douremember.app',
+                    status: 'activo'
                 }
-            )
+            ]
+            setPatients(dummyPatients)
 
-            if (!patientsResponse.ok) {
-                 if (patientsResponse.status === 401) {
-                    throw new Error("Token expirado o no autorizado (loadData)")
-                }
-                throw new Error("Error al obtener pacientes del médico")
-            }
-
-            const patientsData = await patientsResponse.json()
-            const pacientes = Array.isArray(patientsData)
-                ? patientsData
-                : patientsData.pacientes || []
-            setPatients(pacientes)
-
-            // Obtener todos los cuidadores
-            const allUsersResponse = await fetch(
-                `${API_URL}/api/usuarios-autenticacion/buscarUsuarios`,
+            // 🔥 MODO TESTING: Usar cuidadores dummy
+            const dummyCaregivers = [
                 {
-                    method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
+                    idUsuario: '892c4a2f-b555-4bdd-9fac-db16a4f1d3cc',
+                    nombre: 'María López',
+                    correo: 'cuidador@douremember.app',
+                    status: 'activo'
                 }
-            )
-
-            if (!allUsersResponse.ok) {
-                if (allUsersResponse.status === 401) {
-                    throw new Error("Token expirado o no autorizado (loadData)")
-                }
-                throw new Error("Error al obtener usuarios")
-            }
-
-            const allUsersData = await allUsersResponse.json()
-            const caregivers =
-                allUsersData.usuarios?.filter((u: any) => u.rol === "cuidador") || []
-            setAllCaregivers(caregivers)
+            ]
+            setAllCaregivers(dummyCaregivers)
         } catch (error) {
              // Manejo de error de sesión, limpia y redirige
             if (error instanceof Error && error.message.includes("Token expirado")) {
@@ -123,22 +93,22 @@ export default function DoctorPage() {
         const initializeData = async () => {
             console.log("🔍 Inicializando datos y verificando sesión...")
 
-            const token = sessionStorage.getItem("authToken")
-            const idMedico = sessionStorage.getItem("userId")     
+            const token = localStorage.getItem("authToken")
+            const idMedico = localStorage.getItem("userId")
 
-            // --- BLOQUEO INMEDIATO (Si no hay token/ID en sessionStorage) ---
+            // --- BLOQUEO INMEDIATO (Si no hay token/ID en localStorage) ---
             if (!token || !idMedico) {
                 console.warn("⚠️ No hay token o ID de usuario. Redirigiendo inmediatamente.")
-                
+
                 localStorage.clear()
                 sessionStorage.clear()
-                
-                router.replace("/authentication/login") 
-                setIsLoading(false) 
-                return 
+
+                router.replace("/authentication/login")
+                setIsLoading(false)
+                return
             }
             // --- FIN BLOQUEO INMEDIATO ---
-            
+
             setDoctorId(idMedico)
 
             if (!API_URL) {
@@ -146,50 +116,13 @@ export default function DoctorPage() {
                 setIsLoading(false)
                 return
             }
-            
+
             try {
-                // ✅ Petición al backend para verificar el token y obtener datos
-                const response = await fetch(
-                    `${API_URL}/api/usuarios-autenticacion/buscarUsuario/${idMedico}`,
-                    {
-                        method: "GET",
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            "Content-Type": "application/json",
-                        },
-                    }
-                )
+                // 🔥 MODO TESTING: Usar datos del localStorage
+                const doctorName = localStorage.getItem('userName') || 'Doctor'
+                const userRole = localStorage.getItem('userRole')
 
-                if (response.status === 401) {
-                    console.error("❌ Token expirado o no autorizado (Verificación Backend). Status: 401. Redirigiendo.")
-                    localStorage.clear()
-                    sessionStorage.clear()
-                    router.replace("/authentication/login")
-                    return
-                }
-
-                if (!response.ok) {
-                    const errorText = await response.text()
-                    console.error(`❌ Error al obtener el usuario. Status: ${response.status}. Mensaje del servidor: ${errorText}`)
-                    
-                    // Si falla por cualquier otra razón (500, 404), redirigimos también
-                    localStorage.clear()
-                    sessionStorage.clear()
-                    router.replace("/authentication/login") 
-                    
-                    throw new Error("Error en la respuesta del servidor (Status no OK).")
-                }
-
-                const dataUsuario = await response.json()
-                const usuario =
-                    dataUsuario?.usuarios?.[0] || dataUsuario?.usuario || dataUsuario
-
-                if (!usuario) {
-                    console.warn("⚠️ No se encontró información del usuario en la respuesta")
-                    return
-                }
-
-                if (usuario.rol && usuario.rol !== "medico") {
+                if (userRole !== 'medico') {
                     alert("Acceso restringido: esta cuenta no es de médico.")
                     localStorage.clear()
                     sessionStorage.clear()
@@ -198,12 +131,11 @@ export default function DoctorPage() {
                 }
 
                 // ✅ Guardamos info del doctor
-                setDoctorName(usuario.nombre || "Sin nombre")
-                const userId = usuario.idUsuario || usuario.id
-                setDoctorId(userId)
+                setDoctorName(doctorName)
+                setDoctorId(idMedico)
 
                 // ✅ Cargamos datos relacionados
-                await loadData(userId)
+                await loadData(idMedico)
 
             } catch (error) {
                 console.error("🚨 Error al inicializar datos:", error)
@@ -358,6 +290,17 @@ export default function DoctorPage() {
                                         <FileText className="w-5 h-5" />
                                         Reportes Base
                                     </button>
+
+                                    <button
+                                        onClick={() => setActiveView("minijuego")}
+                                        className={`flex-1 px-6 py-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2.5 ${activeView === "minijuego"
+                                                ? "bg-gradient-to-r from-purple-500 to-violet-500 text-white shadow-lg"
+                                                : "text-purple-600 hover:bg-purple-50"
+                                            }`}
+                                    >
+                                        <BarChart3 className="w-5 h-5" />
+                                        Mini-juego
+                                    </button>
                                 </div>
                             </Card>
 
@@ -368,9 +311,48 @@ export default function DoctorPage() {
                                         patients={patients}
                                     />
                                 </div>
-                            ) : (
+                            ) : activeView === "reports" ? (
                                 <div className="space-y-6">
                                     <BaselineReportsModule key={`reports-${refreshKey}`} />
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    <Card className="bg-white border border-slate-100 shadow-lg rounded-2xl p-8">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-14 h-14 bg-gradient-to-br from-pink-600 to-rose-700 rounded-2xl flex items-center justify-center shadow-lg">
+                                                <BarChart3 className="w-7 h-7 text-white" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-2xl font-bold text-slate-900 mb-1">Métricas del Mini-juego Familiar</h2>
+                                                <p className="text-slate-600">Seleccione un paciente para ver su progreso en el mini-juego de reconocimiento</p>
+                                            </div>
+                                        </div>
+
+                                        {patients.length === 0 ? (
+                                            <div className="text-center py-12">
+                                                <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                                <p className="text-slate-500">No hay pacientes asignados</p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {patients.map((patient) => (
+                                                    <button
+                                                        key={patient.idUsuario}
+                                                        onClick={() => router.push(`/familiares/metricas?pacienteId=${patient.idUsuario}&nombre=${encodeURIComponent(patient.nombre)}`)}
+                                                        className="group flex items-center gap-4 p-5 bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl hover:from-pink-50 hover:to-pink-100 transition-all duration-300 border-2 border-slate-200 hover:border-pink-300 hover:shadow-lg text-left"
+                                                    >
+                                                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
+                                                            <User className="w-6 h-6 text-white" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-slate-900">{patient.nombre}</p>
+                                                            <p className="text-sm text-slate-500">Ver métricas del mini-juego</p>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </Card>
                                 </div>
                             )}
                         </div>

@@ -17,6 +17,8 @@ import {
   User,
   Activity,
   TrendingUp,
+  Heart,
+  BarChart3,
   // Eliminamos Camera y Award que no se usan
 } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard-header"
@@ -101,114 +103,60 @@ export default function CuidadorDashboard() {
     let currentUserId = ""
 
     try {
-      // 1. OBTENER TOKEN Y USER ID DESDE LOCALSTORAGE
+      // 1. OBTENER TOKEN Y USER ID DESDE LOCALSTORAGE (TESTING)
       token = localStorage.getItem("authToken") || ""
       currentUserId = localStorage.getItem("userId") || ""
+      const userRole = localStorage.getItem("userRole") || ""
+      const userName = localStorage.getItem("userName") || "Cuidador"
 
       if (!token || !currentUserId) {
-        console.log("No token o userId en localStorage, redirigiendo a login.")
+        console.log("No token o userId, redirigiendo a login.")
         router.push('/authentication/login')
         return
       }
 
-      setUserId(currentUserId)
-
-      // 2. OBTENER PERFIL DEL USUARIO (ROL)
-      const userResponse = await fetch(
-        `${API_URL}/usuarios-autenticacion/buscarUsuario/${currentUserId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          }
-        }
-      )
-
-      if (!userResponse.ok) {
-        throw new Error('Error al obtener datos del usuario')
-      }
-
-      const userData = await userResponse.json()
-      const usuario = userData.usuarios?.[0]
-
-      if (!usuario) {
-        throw new Error('No se encontró el usuario')
-      }
-
-      // 3. VERIFICACIÓN DE ROL
-      if (usuario.rol !== 'cuidador') {
-        alert(`No tienes permisos para acceder a este panel. Tu rol es: ${usuario.rol}`)
-
-        switch (usuario.rol) {
+      // 3. VERIFICACIÓN DE ROL (sin fetch)
+      if (userRole !== 'cuidador') {
+        alert(`No tienes permisos para acceder a este panel. Tu rol es: ${userRole}`)
+        switch (userRole) {
           case 'medico': router.push('/users/doctor'); break
           case 'paciente': router.push('/users/patient'); break
-          case 'administrador': router.push('/users/admin'); break
           default: router.push('/'); break
         }
         return
       }
 
-      setUserName(usuario.nombre || 'Cuidador')
-      setUserRole(usuario.rol)
+      setUserName(userName || 'Cuidador')
+      setUserRole(userRole || 'cuidador')
 
-      // 4. OBTENER IMÁGENES DEL CUIDADOR
-      const imagenesResponse = await fetch(
-        `${API_URL}/descripciones-imagenes/listarImagenes/${currentUserId}?page=1&limit=100`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+      // 4. 🔥 TESTING MODE: Usar datos dummy en lugar de API
+      // Para producción, descomentar y comentar las líneas de dummy data
+      try {
+        const dummyPatients = [
+          {
+            idUsuario: '7165f511-c999-46a7-881c-755fc3e61510',
+            nombre: 'Juan Pérez',
+            correo: 'paciente@douremember.app'
           }
-        }
-      )
+        ]
 
-      let totalImagenes = 0
-      if (imagenesResponse.ok) {
-        const imagenesData = await imagenesResponse.json()
-        totalImagenes = imagenesData.data?.length || 0
-      }
+        setPatients(dummyPatients)
 
-      // 5. OBTENER PACIENTES ASIGNADOS AL CUIDADOR
-      const pacientesResponse = await fetch(
-        `${API_URL}/usuarios-autenticacion/pacienteCuidador/${currentUserId}`,
-        { headers: { "Authorization": `Bearer ${token}` } }
-      )
-
-      if (pacientesResponse.ok) {
-        const pacientesData = await pacientesResponse.json()
-
-        const pacientesCompletos = await Promise.all(
-          pacientesData.map(async (item: { idPaciente: string }) => {
-            const perfilResponse = await fetch(
-              `${API_URL}/usuarios-autenticacion/buscarUsuario/${item.idPaciente}`,
-              { headers: { "Authorization": `Bearer ${token}` } }
-            )
-
-            if (perfilResponse.ok) {
-              const perfilData = await perfilResponse.json()
-              if (perfilData.usuarios && perfilData.usuarios.length > 0) {
-                return perfilData.usuarios[0]
-              }
-            }
-            return null
-          })
-        )
-
-        const pacientesValidos = pacientesCompletos.filter(p => p !== null)
-        setPatients(pacientesValidos)
-
-        if (pacientesValidos.length > 0) {
-          const defaultPatientId = pacientesValidos[0].idUsuario
+        if (dummyPatients.length > 0) {
+          const defaultPatientId = dummyPatients[0].idUsuario
           setSelectedPatient(defaultPatientId)
-          // 6. CARGAR SESIONES DEL PRIMER PACIENTE
+          // CARGAR SESIONES DEL PRIMER PACIENTE
           await loadSessionsForPatient(defaultPatientId, token)
         }
-      }
 
-      setStats(prev => ({
-        ...prev,
-        totalImagenes // Solo actualizamos totalImagenes aquí
-      }))
+        // Dummy stats
+        setStats(prev => ({
+          ...prev,
+          totalImagenes: 0
+        }))
+      } catch (error) {
+        console.error('Error en modo testing:', error)
+      }
 
     } catch (error) {
       console.error('Error al cargar datos:', error)
@@ -291,7 +239,15 @@ export default function CuidadorDashboard() {
       )
 
       if (!allSessionsResponse.ok) {
-        console.error('Error al cargar sesiones')
+        console.warn('⚠️ No se pudieron cargar sesiones del API, usando datos vacíos')
+        // Usar datos vacíos en testing mode
+        setSesiones([])
+        setStats(prev => ({
+          ...prev,
+          totalSesiones: 0,
+          sesionesCompletadas: 0,
+          sesionesPendientes: 0
+        }))
         return
       }
 
@@ -317,10 +273,18 @@ export default function CuidadorDashboard() {
       }))
 
       // Nota: Si la lógica de arriba es precisa, puedes comentar o eliminar la siguiente línea:
-      // await loadSessionTotals(token) 
+      // await loadSessionTotals(token)
 
     } catch (error) {
       console.error('Error al cargar sesiones:', error)
+      // En caso de error, usar datos vacíos
+      setSesiones([])
+      setStats(prev => ({
+        ...prev,
+        totalSesiones: 0,
+        sesionesCompletadas: 0,
+        sesionesPendientes: 0
+      }))
     }
   }
 
@@ -657,6 +621,45 @@ export default function CuidadorDashboard() {
                   </button>
                 </div>
               </Card>
+
+              {/* Gestión de Familiares y Métricas del Mini-juego */}
+              {selectedPatient && (
+                <Card className="bg-white border border-slate-100 shadow-lg rounded-2xl p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-pink-600 to-rose-700 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Heart className="w-6 h-6 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-900">Galería Familiar & Mini-juego</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <button
+                      onClick={() => router.push(`/familiares/gestion?pacienteId=${selectedPatient}`)}
+                      className="group flex items-center gap-4 p-6 bg-gradient-to-br from-pink-50 to-pink-100 rounded-2xl hover:from-pink-100 hover:to-pink-200 transition-all duration-300 border-2 border-pink-200 hover:border-pink-300 hover:shadow-lg"
+                    >
+                      <div className="w-14 h-14 bg-gradient-to-br from-pink-600 to-pink-700 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <Heart className="w-7 h-7 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-slate-900 text-lg">Gestionar Familiares</p>
+                        <p className="text-sm text-slate-600">Registrar fotos y datos de familiares</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => router.push(`/familiares/metricas?pacienteId=${selectedPatient}`)}
+                      className="group flex items-center gap-4 p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-2xl hover:from-indigo-100 hover:to-indigo-200 transition-all duration-300 border-2 border-indigo-200 hover:border-indigo-300 hover:shadow-lg"
+                    >
+                      <div className="w-14 h-14 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <BarChart3 className="w-7 h-7 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-slate-900 text-lg">Métricas Mini-juego</p>
+                        <p className="text-sm text-slate-600">Ver progreso del paciente</p>
+                      </div>
+                    </button>
+                  </div>
+                </Card>
+              )}
             </section>
           )}
 
