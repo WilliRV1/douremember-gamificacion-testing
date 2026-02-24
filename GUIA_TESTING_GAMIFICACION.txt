@@ -1,0 +1,523 @@
+================================================================================
+                    GUÍA DE TESTING - SISTEMA DE GAMIFICACIÓN
+                        DoURemember - Mini-juego de Familiares
+================================================================================
+
+📅 Fecha: Febrero 2026
+🎮 Versión: v1.0 - Gamificación Completa
+👥 Equipo: D3vCor3Bits
+
+================================================================================
+                                CONTENIDO
+================================================================================
+
+1. REQUISITOS PREVIOS
+2. CREDENCIALES DE TEST
+3. SETUP INICIAL
+4. FUNCIONALIDADES POR ROL
+5. FLUJO COMPLETO DE TESTING
+6. VALIDACIONES ESPERADAS
+7. TROUBLESHOOTING
+
+================================================================================
+                            1. REQUISITOS PREVIOS
+================================================================================
+
+✓ Node.js v18+ instalado
+✓ Git instalado
+✓ Navegador moderno (Chrome, Firefox, Edge)
+✓ Acceso a internet (para cargar imágenes de randomuser.me)
+✓ Proyecto clonado: https://github.com/WilliRV1/douremember-gamificacion-testing
+
+INSTALACIÓN:
+-----------
+1. Clonar el repositorio:
+   git clone https://github.com/WilliRV1/douremember-gamificacion-testing.git
+   cd douremember-gamificacion-testing
+   git checkout testing
+
+2. Instalar dependencias:
+   npm install
+
+3. Levantar el servidor de desarrollo:
+   npm run dev
+
+4. Abrir en navegador:
+   http://localhost:3000
+
+✓ Deberías ver la página de login de DoURemember
+
+================================================================================
+                        2. CREDENCIALES DE TEST
+================================================================================
+
+El sistema tiene 3 usuarios de prueba con localStorage persistente.
+NO necesitas base de datos real - todo corre en modo test.
+
+USUARIO 1 - MÉDICO
+------------------
+Email:    doctor@douremember.app
+Contraseña: password
+Rol:      medico
+Acceso:   http://localhost:3000/users/doctor
+
+USUARIO 2 - PACIENTE
+--------------------
+Email:    paciente@douremember.app
+Contraseña: password
+Rol:      paciente
+Acceso:   http://localhost:3000/users/patient
+
+USUARIO 3 - CUIDADOR
+--------------------
+Email:    cuidador@douremember.app
+Contraseña: password
+Rol:      cuidador
+Acceso:   http://localhost:3000/users/cuidador
+
+DATOS DE PRUEBA PRECARGADOS:
+----------------------------
+Se cargan automáticamente 6 familiares con fotos:
+- María González (madre)
+- Carlos Pérez (padre)
+- Ana Pérez (hermana)
+- Luis Pérez (hermano)
+- Rosa González (abuela)
+- Pedro González (abuelo)
+
+================================================================================
+                        3. SETUP INICIAL
+================================================================================
+
+PASO 1: LIMPIAR NAVEGADOR (Si es primera vez)
+--------------------------------------------
+Si tienes sesiones anteriores, limpia localStorage:
+1. Abre DevTools: F12
+2. Application → LocalStorage
+3. Busca entries de "auth", "userId", "userName", "userRole"
+4. Elimina todas
+
+PASO 2: VERIFICAR CONEXIÓN A SUPABASE
+-------------------------------------
+Las imágenes de familiares se cargan desde:
+- randomuser.me (fotos públicas de ejemplo)
+- Supabase Storage (audios y fotos de pacientes reales)
+
+Si ves errores de CORS, revisa que en next.config.ts esté configurado:
+```
+remotePatterns: [
+  { protocol: 'https', hostname: 'randomuser.me' },
+  { protocol: 'https', hostname: '*.supabase.co' }
+]
+```
+
+PASO 3: VERIFICAR AMBIENTE
+--------------------------
+Abre DevTools → Console (F12)
+Deberías ver logs como:
+✓ "🔍 Inicializando datos y verificando sesión..."
+✓ "✅ Usuario logueado como: [nombre]"
+
+Si ves errores de auth, revisa que localStorage tenga estos keys:
+- authToken
+- userId
+- userName
+- userRole
+
+================================================================================
+                        4. FUNCIONALIDADES POR ROL
+================================================================================
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                              ROL: CUIDADOR
+╚════════════════════════════════════════════════════════════════════════════╝
+
+ACCESO:
+-------
+1. Login con: cuidador@douremember.app / password
+2. Ir a: http://localhost:3000/users/cuidador
+
+FUNCIONALIDADES A PROBAR:
+-------------------------
+
+[1] Ver Panel de Cuidador
+    ✓ Debe mostrar: "Hola, Cuidador"
+    ✓ Card de bienvenida con gradient morado
+    ✓ Botones: Mi Perfil, Invitar Usuario, Cerrar Sesión
+
+[2] Ver Familiares (Pestaña "Familiares")
+    ✓ Listar todos los familiares del paciente
+    ✓ Mostrar tarjeta con: foto, nombre, parentesco, descripción
+    ✓ Cada tarjeta debe tener botones: Editar, Eliminar, Subir Audio
+
+[3] Agregar Familiar
+    ✓ Botón "Agregar Familiar" → Abre modal
+    ✓ Campos: nombre, parentesco, descripción, foto
+    ✓ Upload de imagen (jpg, png, webp)
+    ✓ Guardar → Familiar aparece en la lista
+
+[4] Editar Familiar
+    ✓ Click en "Editar" en una tarjeta
+    ✓ Modal pre-rellena los datos actuales
+    ✓ Cambiar nombre y guardar
+    ✓ Verificar que se actualiza en la lista
+
+[5] Subir Audio para Familiar
+    ✓ Click en "Subir Audio" en una tarjeta
+    ✓ Seleccionar archivo .mp3 o .wav
+    ✓ Mensaje de éxito: "✅ Audio subido correctamente"
+
+[6] Eliminar Familiar
+    ✓ Click en "Eliminar"
+    ✓ Pedir confirmación
+    ✓ Al confirmar → Familiar desaparece de la lista
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                              ROL: PACIENTE
+╚════════════════════════════════════════════════════════════════════════════╝
+
+ACCESO:
+-------
+1. Login con: paciente@douremember.app / password
+2. Ir a: http://localhost:3000/users/patient
+
+FUNCIONALIDADES A PROBAR:
+-------------------------
+
+[1] Ver Panel de Paciente
+    ✓ Debe mostrar: "Hola, Paciente"
+    ✓ Mostrar datos del paciente
+    ✓ Acceso rápido a mini-juego
+
+[2] Galería de Familiares (Pestaña "Galería")
+    ✓ Mostrar grid de 6 familiares
+    ✓ Cada tarjeta: foto + nombre + parentesco
+    ✓ Click en tarjeta → Expandir para ver descripción y audio
+
+[3] Reproducción de Audio
+    ✓ Si existe audio para el familiar → Mostrar botón de play
+    ✓ Click en play → Reproducir audio
+    ✓ Mostrar controles: play/pause, volumen, barra de progreso
+
+[4] Jugar Mini-juego (Pestaña "Mini-juego")
+    ✓ Botón "Jugar Ahora"
+    ✓ Se abre juego en: http://localhost:3000/familiares/minijuego
+
+    DURANTE EL JUEGO:
+    - Mostrar foto de familiar aleatorio
+    - 4 opciones con nombres diferentes
+    - Seleccionar respuesta correcta → +15 puntos
+    - Respuesta incorrecta → +5 puntos
+    - Después de 4 rondas → Mostrar puntuación
+
+    SCORING ESPERADO:
+    - Mínimo: 20 puntos (todos mal)
+    - Máximo: 60 puntos (todos correctos)
+    - Test completado: 52 puntos (87% de precisión) ✅
+
+[5] Ver Resultados del Juego
+    ✓ Panel de puntuación: "Total: XX/60"
+    ✓ Porcentaje de aciertos: "XX% de precisión"
+    ✓ Botón "Jugar de nuevo" → Reinicia el juego
+    ✓ Botón "Volver" → Regresa al panel
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                              ROL: MÉDICO
+╚════════════════════════════════════════════════════════════════════════════╝
+
+ACCESO:
+-------
+1. Login con: doctor@douremember.app / password
+2. Ir a: http://localhost:3000/users/doctor
+
+FUNCIONALIDADES A PROBAR:
+-------------------------
+
+[1] Ver Panel del Médico
+    ✓ Debe mostrar: "Hola, Dr. Doctor"
+    ✓ Card de bienvenida con gradient morado oscuro
+    ✓ Botones: Mi Perfil, Invitar Usuario, Cerrar Sesión
+
+[2] Pestaña "Pacientes"
+    ✓ Listar todos los pacientes del médico
+    ✓ Mostrar: nombre, correo, estado
+    ✓ Link o botón "Ver métricas" para cada paciente
+
+[3] Pestaña "Reportes Base"
+    ✓ Tabla de reportes base de pacientes
+    ✓ Filtros: por paciente, por fecha
+    ✓ Estadísticas de reportes
+
+[4] Pestaña "Mini-juego"
+    ✓ Grid con todos los pacientes
+    ✓ Click en paciente → Navega a:
+      /familiares/metricas?pacienteId=<ID>&nombre=<NOMBRE>
+
+[5] Ver Métricas del Mini-juego
+    ✓ Página: http://localhost:3000/familiares/metricas?pacienteId=...
+    ✓ Dashboard con gráficos del desempeño del paciente
+    ✓ Mostrar:
+      - Puntuación total: 52/60
+      - Porcentaje de aciertos: 87%
+      - Familiares más difíciles
+      - Tendencias de mejora
+    ✓ Botón "Volver" → Regresa al panel del médico
+
+================================================================================
+                        5. FLUJO COMPLETO DE TESTING
+================================================================================
+
+ESCENARIO TÍPICO (Día 1 de gamificación):
+------------------------------------------
+
+PASO 1: Cuidador agrega familiares (5 minutos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Login como: cuidador@douremember.app / password
+2. Ir a: /users/cuidador
+3. Click en pestaña "Familiares"
+4. Click en "Agregar Familiar"
+5. Llenar:
+   - Nombre: María González
+   - Parentesco: Madre
+   - Descripción: Mi mamá que siempre me cuidó
+   - Foto: Seleccionar cualquier imagen local
+6. Click "Guardar"
+7. Verificar que aparece en la lista
+8. Repetir para otros 2-3 familiares
+
+PASO 2: Cuidador sube audios (3 minutos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. En lista de familiares
+2. Click en "Subir Audio" de cualquier familiar
+3. Seleccionar un archivo .mp3 de prueba
+4. Esperar confirmación: "✅ Audio subido correctamente"
+5. Repetir para 2-3 familiares
+
+PASO 3: Paciente ve galería y entiende la estructura (2 minutos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Logout (Click botón "Cerrar Sesión")
+2. Login como: paciente@douremember.app / password
+3. Ir a: /users/patient
+4. Click en pestaña "Galería"
+5. Ver grid con fotos de familiares
+6. Click en una tarjeta para ver detalles
+7. Si existe audio → Click en play para escuchar
+
+PASO 4: Paciente juega mini-juego (5 minutos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. En panel de paciente
+2. Click en pestaña "Mini-juego"
+3. Click en "Jugar Ahora"
+4. Se abre: /familiares/minijuego
+5. Para cada ronda:
+   - Leer la pregunta: "¿Quién es esta persona?"
+   - Ver foto de familiar
+   - Seleccionar nombre correcto de 4 opciones
+   - Ver actualización de puntos (+15 si correcto, +5 si incorrecto)
+6. Después de 4 rondas → Ver resultado final
+   - Puntuación esperada: 20-60 puntos
+   - Porcentaje de aciertos
+
+PASO 5: Médico revisa métricas (3 minutos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Logout
+2. Login como: doctor@douremember.app / password
+3. Ir a: /users/doctor
+4. Click en pestaña "Mini-juego"
+5. Ver grid con pacientes
+6. Click en "Juan Pérez" (paciente de test)
+7. Se abre: /familiares/metricas?pacienteId=...
+8. Ver dashboard con:
+   - Puntuación total: 52/60
+   - Porcentaje: 87%
+   - Gráficos de desempeño
+   - Familiares por dificultad
+
+TIEMPO TOTAL: ~18 minutos para flujo completo
+
+================================================================================
+                        6. VALIDACIONES ESPERADAS
+================================================================================
+
+✅ AUTENTICACIÓN
+   ✓ LocalStorage persiste credenciales (refresh de página mantiene sesión)
+   ✓ Logout limpia localStorage correctamente
+   ✓ Role-based access control funciona (paciente no ve panel médico)
+
+✅ GALERÍA DE FAMILIARES
+   ✓ Se cargan 6 familiares con fotos de randomuser.me
+   ✓ Las imágenes se muestran correctamente (no hay CORS errors)
+   ✓ Grid responsive en móvil y desktop
+
+✅ MINI-JUEGO
+   ✓ 4 rondas con familiares aleatorios
+   ✓ Puntuación correcta: +15 (acierto), +5 (error)
+   ✓ Total máximo: 60 puntos
+   ✓ Porcentaje de aciertos calculado correctamente
+   ✓ Sesión guardada en Supabase (minijuego_sesiones)
+   ✓ Rondas guardadas (minijuego_rondas) con detalles
+
+✅ MÉTRICAS DEL MÉDICO
+   ✓ Dashboard carga métricas del paciente
+   ✓ Puntuación total: 52/60 ✓
+   ✓ Porcentaje: 87% ✓
+   ✓ Gráficos se renderizan correctamente
+   ✓ Filtros por paciente funcionan
+
+✅ MANEJO DE ERRORES
+   ✓ Si falta pacienteId → Mostrar: "Se requiere un ID de paciente"
+   ✓ Si usuario no autorizado → Mostrar acceso denegado
+   ✓ Si falla Supabase → Mostrar mensaje amigable (no exponer detalles técnicos)
+
+✅ PERFORMANCE
+   ✓ Página carga en menos de 3 segundos
+   ✓ Imágenes se cargan sin delays notables
+   ✓ No hay memory leaks (DevTools → Memory profiler)
+
+================================================================================
+                            7. TROUBLESHOOTING
+================================================================================
+
+PROBLEMA: "Error: No hay token o ID de usuario"
+──────────────────────────────────────────────────
+CAUSA: localStorage no tiene credenciales
+SOLUCIÓN:
+1. Abre DevTools (F12)
+2. Application → LocalStorage → http://localhost:3000
+3. Verifica que existan estos keys:
+   - authToken
+   - userId
+   - userName
+   - userRole
+4. Si no existen, intenta login de nuevo
+5. Si aún no funcionan, limpia localStorage completamente:
+   localStorage.clear() en console
+   Luego recarga la página y haz login
+
+PROBLEMA: "Las imágenes de familiares no cargan"
+────────────────────────────────────────────────
+CAUSA: CORS o next.config.ts no configurado
+SOLUCIÓN:
+1. Verifica que next.config.ts tenga:
+   ```
+   remotePatterns: [
+     { protocol: 'https', hostname: 'randomuser.me' },
+     { protocol: 'https', hostname: '*.supabase.co' }
+   ]
+   ```
+2. Reinicia el servidor: npm run dev
+3. Limpia caché del navegador: Ctrl+Shift+Del
+4. Recarga la página: Ctrl+R (hard refresh)
+
+PROBLEMA: "Mini-juego no carga / Error en metricas"
+────────────────────────────────────────────────────
+CAUSA: Posible problema con conexión a Supabase
+SOLUCIÓN:
+1. Verifica en .env que NEXT_PUBLIC_API_URL esté correcto
+2. Abre DevTools → Network tab
+3. Busca llamadas a API que retornen error
+4. Si ves "Row Level Security" error:
+   → Tabla familiares/minijuego_sesiones/minijuego_rondas tiene RLS habilitado
+   → Contacta al admin para deshabilitar RLS
+
+PROBLEMA: "Sesión se cierra al cambiar de pestaña"
+──────────────────────────────────────────────────
+CAUSA: Se usaba sessionStorage (obsoleto)
+SOLUCIÓN:
+✓ Sistema ahora usa localStorage (persiste)
+✓ Si aún ocurre, limpia sessionStorage:
+  1. DevTools → Application → SessionStorage
+  2. Elimina todos los items
+  3. Recarga página
+
+PROBLEMA: "¿Por qué los datos se cargan muy lento?"
+───────────────────────────────────────────────────
+CONTEXTO: Las imágenes vienen de randomuser.me (CDN público)
+✓ Primera carga: Puede tardar 1-2 segundos
+✓ Cargas posteriores: Caché del navegador (< 100ms)
+✓ Si persiste: Revisa tu velocidad de internet
+  Prueba en: https://fast.com/
+
+PROBLEMA: "¿Puedo cambiar los datos de prueba?"
+─────────────────────────────────────────────────
+SÍ, puedes:
+1. Para modificar familiares: /users/cuidador → Editar/Eliminar
+2. Para agregar nuevos: /users/cuidador → "Agregar Familiar"
+3. Los datos se guardan en Supabase (tabla: familiares)
+4. Para resetear todo, ejecuta:
+   scripts/seed-familiares.mjs
+
+PROBLEMA: "¿Cómo recargo todos los datos de test?"
+──────────────────────────────────────────────────
+Ejecuta el script de seed:
+1. Terminal: cd al proyecto
+2. npm run seed
+   (Esto carga 6 familiares nuevos a Supabase)
+3. Recarga la página
+
+================================================================================
+                        CHECKLIST FINAL DE TESTING
+================================================================================
+
+ANTES DE REPORTAR BUGS:
+───────────────────────
+☐ ¿Está npm run dev ejecutándose?
+☐ ¿Recargaste la página? (Ctrl+R / Cmd+R)
+☐ ¿Limpiaste caché? (Ctrl+Shift+Del)
+☐ ¿Verificaste console? (F12 → Console) para ver errores reales
+☐ ¿Intentaste en otro navegador?
+☐ ¿Intentaste con modo incógnito?
+☐ ¿Ejecutaste npm install nuevamente?
+
+BUGS A REPORTAR:
+────────────────
+Cuando reportes un bug, incluye:
+1. Pasos exactos para reproducir
+2. Rol de usuario (médico/paciente/cuidador)
+3. Screenshot del error
+4. Contenido de console (F12)
+5. URL donde ocurrió
+6. Sistema operativo y navegador
+
+EJEMPLO DE BUG BIEN REPORTADO:
+────────────────────────────────
+Título: Mini-juego muestra respuesta incorrecta como correcta
+
+Descripción:
+- Login como: paciente@douremember.app
+- Ir a: /users/patient → Mini-juego
+- Ronda 2: "¿Quién es esta persona?" muestra foto de María
+- Opciones: [María, Carlos, Ana, Luis]
+- Selecciono "María" (correcto)
+- ¡BUG! Sistema suma +5 puntos (error) en lugar de +15 (acierto)
+
+Browser: Chrome 120
+Sistema: Windows 11
+Console error: (pegue el contenido)
+Screenshot: [adjunto]
+
+================================================================================
+                            CONTACTO Y SOPORTE
+================================================================================
+
+🎮 Equipo de Desarrollo: D3vCor3Bits
+📧 Contacto: [Tu email de equipo]
+🐛 Reporte de bugs: Issues en GitHub
+💬 Preguntas: Crear discussion en GitHub
+
+REPOSITORIO OFICIAL:
+https://github.com/WilliRV1/douremember-gamificacion-testing
+
+DOCUMENTACIÓN TÉCNICA:
+- Backend: /Douremember-launcher (submodulos)
+- Frontend: Este proyecto
+- Database: Supabase (https://supabase.io)
+
+================================================================================
+                        ¡LISTO PARA TESTEAR! 🚀
+================================================================================
+
+Gracias por ayudarnos a validar el sistema de gamificación.
+Tu feedback es crucial para mejorar la experiencia del usuario.
+
+¡A probar!
