@@ -2,14 +2,14 @@ const { defineConfig } = require('cypress')
 
 module.exports = defineConfig({
   e2e: {
-    baseUrl: 'https://api.devcorebits.com',
+    baseUrl: 'http://localhost:3005',
     setupNodeEvents(on, config) {
       // implement node event listeners here
       return config
     },
     specPattern: 'src/cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
     supportFile: 'src/cypress/support/e2e.ts',
-    video: false, // Cambiar a false para desarrollo, true para CI
+    video: true, // Cambiar a false para desarrollo, true para CI
     screenshotOnRunFailure: true,
     viewportWidth: 1280,
     viewportHeight: 720,
