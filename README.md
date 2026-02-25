@@ -24,12 +24,53 @@
 - 📸 **Galería de fotos** con edición y clasificación
 - 📊 **Reportes de seguimiento** con análisis de baseline
 - 📋 **Sesiones de rehabilitación** con respuestas y seguimiento
+- 🎮 **Minijuego de Gamificación** para estimulación cognitiva
 - 🔔 **Sistema de notificaciones**
 - 💊 **Control de vitaminas y suplementos**
 - 📅 **Calendario de citas**
 - 🎨 **Interfaz moderna** con componentes personalizados
 - ✅ **Tests unitarios** con Jest
 - 🧪 **Tests E2E** con Cypress
+
+---
+
+## 🎮 Minijuego de Gamificación
+
+El **Minijuego de Gamificación** es un módulo de estimulación cognitiva diseñado para pacientes con deterioro cognitivo. Permite:
+
+### 🎯 Características del Minijuego
+- **Reconocimiento de Familiares:** Paciente identifica fotos de familiares cuidadores
+- **Sistema de Pistas Progresivas:** 3 niveles de ayuda (pista de nombre, descripción, audio)
+- **Métricas de Desempeño:** Registra intentos, aciertos, puntaje y progreso
+- **Galería Interactiva:** Acceso a fotos y audios de familiares para estimulación
+- **Reportes para Médicos:** Análisis detallado de desempeño y tendencias
+
+### 📍 Rutas Principales del Minijuego
+- **`/familiares/minijuego`** - Juego interactivo
+- **`/familiares/gallery`** - Galería de familiares
+- **`/familiares/metricas`** - Análisis de métricas (médico)
+- **`/familiares/gestion`** - Gestión de familiares (cuidador)
+
+---
+
+## 🚀 Modo de Demostración (Backend Bypass)
+
+Debido a la migración del backend, esta versión incluye un **Modo de Demostración** activo para permitir la evaluación completa de la funcionalidad del **Minijuego de Gamificación** sin dependencia del backend original.
+
+### 🔑 Credenciales de Acceso
+Para probar la aplicación sin conexión al backend original, utilice las siguientes cuentas:
+
+| Rol | Correo Electrónico | Contraseña | Acceso |
+| :--- | :--- | :--- | :--- |
+| **Paciente** | `paciente@douremember.app` | *Cualquiera (min. 10 chars)* | Minijuego, Galería |
+| **Médico** | `doctor@douremember.app` | *Cualquiera (min. 10 chars)* | Métricas, Análisis |
+| **Cuidador** | `cuidador@douremember.app` | *Cualquiera (min. 10 chars)* | Gestión Familiares |
+
+### 🛠️ Detalles Técnicos del Modo Demo
+- **Autenticación:** Bypass local mediante `localStorage` que persiste sesión simulada en cliente
+- **Almacenamiento:** Credenciales demo en `src/config/demo-accounts.ts`
+- **Persistencia:** Los datos del minijuego se gestionan en Supabase para garantizar resultados durante la sesión
+- **Testing:** Suite E2E con Cypress validando 5 escenarios completos (cuidador, paciente, médico, galería, audios)
 
 ---
 
